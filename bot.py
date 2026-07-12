@@ -72,14 +72,14 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-    print("IMDB ID:", imdb_id, flush=True)
+      print("IMDB ID:", imdb_id, flush=True)
 
-    subtitles = search_subtitles(imdb_id)
+      subtitles = search_subtitles(imdb_id)
 
-except Exception as e:
-    logger.exception(e)
-    await msg.edit_text("❌ Failed to search subtitles.")
-    return
+    except Exception as e:
+      logger.exception(e)
+      await msg.edit_text("❌ Failed to search subtitles.")
+      return
 
     if not subtitles:
         await msg.edit_text("❌ No subtitles found.")
