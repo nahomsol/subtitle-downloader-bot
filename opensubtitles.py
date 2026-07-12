@@ -35,13 +35,13 @@ def search_subtitles(imdb_id):
     results = []
 
     for item in data.get("data", []):
-        attr = item.get("attributes", {})
+    attr = item.get("attributes", {})
 
-        results.append({
-            "id": item.get("id"),
-            "language": attr.get("language"),
-            "release": attr.get("release")
-        })
+    results.append({
+        "file_id": item.get("id"),
+        "language": attr.get("language"),
+        "release": attr.get("release")
+    })
 
     return results
 
