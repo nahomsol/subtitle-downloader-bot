@@ -207,7 +207,7 @@ def main():
         CallbackQueryHandler(button_callback)
     )
 
-    logger.info("Bot started...")
+    print("Bot started...")
     application.run_polling(
         allowed_updates=Update.ALL_TYPES
     )
