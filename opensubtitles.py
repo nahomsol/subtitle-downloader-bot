@@ -54,6 +54,8 @@ def download_subtitle(file_id):
     }
 
     try:
+        print(f"Requesting download for file_id: {file_id}")
+        
         response = requests.get(
             f"{BASE_URL}/download",
             headers=headers,
@@ -62,42 +64,67 @@ def download_subtitle(file_id):
         )
 
         print(f"Download response status: {response.status_code}")
-        print(f"Download response headers: {response.headers}")
+        print(f"Content-Type: {response.headers.get('Content-Type')}")
 
         if response.status_code != 200:
             print(f"Error: Status code {response.status_code}")
+            print(f"Response text: {response.text[:500]}")
             return None
 
-        data = response.json()
-        print(f"Download response data: {data}")
+        # Check if response is actually JSON
+        content_type = response.headers.get('Content-Type', '')
+        
+        if 'application/json' in content_type:
+            data = response.json()
+            print(f"Download response data: {data}")
 
-        if "link" not in data:
-            print("Error: No 'link' field in response")
-            print(f"Available fields: {data.keys()}")
+            if "link" not in data:
+                print("Error: No 'link' field in response")
+                print(f"Available fields: {data.keys()}")
+                return None
+
+            # Get download link from response
+            download_link = data.get("link")
+            print(f"Download link: {download_link}")
+
+            # Download the actual subtitle file
+            subtitle_response = requests.get(download_link, timeout=30)
+
+            print(f"Subtitle file response status: {subtitle_response.status_code}")
+
+            if subtitle_response.status_code != 200:
+                print(f"Error downloading file: Status {subtitle_response.status_code}")
+                return None
+
+            # Handle gzip compression if needed
+            content = subtitle_response.content
+            if subtitle_response.headers.get('content-encoding') == 'gzip':
+                try:
+                    content = gzip.decompress(content)
+                except Exception as e:
+                    print(f"Error decompressing gzip: {e}")
+
+            print(f"Subtitle file size: {len(content)} bytes")
+            return io.BytesIO(content)
+        
+        elif 'text/plain' in content_type or 'text/vtt' in content_type or 'application/x-subrip' in content_type:
+            # Direct subtitle file response
+            print("Received direct subtitle file")
+            content = response.content
+            
+            if response.headers.get('content-encoding') == 'gzip':
+                try:
+                    content = gzip.decompress(content)
+                except Exception as e:
+                    print(f"Error decompressing gzip: {e}")
+            
+            print(f"Subtitle file size: {len(content)} bytes")
+            return io.BytesIO(content)
+        
+        else:
+            print(f"Unexpected content type: {content_type}")
+            print(f"Response preview: {response.text[:500]}")
             return None
-
-        # Get download link from response
-        download_link = data.get("link")
-        print(f"Download link: {download_link}")
-
-        # Download the actual subtitle file
-        subtitle_response = requests.get(download_link, timeout=30)
-
-        print(f"Subtitle file response status: {subtitle_response.status_code}")
-
-        if subtitle_response.status_code != 200:
-            print(f"Error downloading file: Status {subtitle_response.status_code}")
-            return None
-
-        # Handle gzip compression if needed
-        content = subtitle_response.content
-        if subtitle_response.headers.get('content-encoding') == 'gzip':
-            content = gzip.decompress(content)
-
-        print(f"Subtitle file size: {len(content)} bytes")
-
-        # Return file as bytes
-        return io.BytesIO(content)
 
     except Exception as e:
         print(f"Error downloading subtitle: {e}")
