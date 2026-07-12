@@ -47,11 +47,8 @@ def search_subtitles(imdb_id):
         print(f"Found response data with {len(data.get('data', []))} items", flush=True)
 
         subtitles = []
-
-        for item in data.get("data", []):
-    print(json.dumps(item, indent=2), flush=True)
-
-    attributes = item.get("attributes", {})
+for item in data.get("data", []):
+    print(json.dumps(item, indent=2), flush=True)    attributes = item.get("attributes", {})
            
     # Get file_id from files array
             files = attributes.get("files", [])
