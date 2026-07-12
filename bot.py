@@ -10,8 +10,7 @@ from telegram.ext import (
 
 from config import BOT_TOKEN, check_config
 from subtitles import search_movie, get_imdb_id
-from opensubtitles import search_subtitles
-
+from opensubtitles import search_subtitles, download_subtitle
 LANGUAGE_NAMES = {
     "en": "🇬🇧 English",
     "fr": "🇫🇷 French",
@@ -113,19 +112,28 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Create inline buttons for languages (2 per row)
     keyboard = []
-    for i in range(0, len(languages[:20]), 2):
-        row = []
-        for j in range(2):
-            if i + j < len(languages[:20]):
-                lang = languages[i + j]
-                language_name = LANGUAGE_NAMES.get(lang, lang)
-                row.append(
-                    InlineKeyboardButton(
-                        language_name,
-                        callback_data=f"download_{lang}"
-                    )
+
+for i in range(0, len(subtitles[:20]), 2):
+    row = []
+
+    for j in range(2):
+        if i + j < len(subtitles[:20]):
+
+            sub = subtitles[i + j]
+
+            language_name = LANGUAGE_NAMES.get(
+                sub["language"],
+                sub["language"]
+            )
+
+            row.append(
+                InlineKeyboardButton(
+                    language_name,
+                    callback_data=f'download_{sub["file_id"]}'
                 )
-        keyboard.append(row)
+            )
+
+    keyboard.append(row)
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
