@@ -111,13 +111,39 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🌍 Available subtitle languages:\n\n"
     )
 
-    for lang in languages[:20]:
-        language_name = LANGUAGE_NAMES.get(lang, lang)
+    # Create inline buttons for languages (2 per row)
+    keyboard = []
+    for i in range(0, len(languages[:20]), 2):
+        row = []
+        for j in range(2):
+            if i + j < len(languages[:20]):
+                lang = languages[i + j]
+                language_name = LANGUAGE_NAMES.get(lang, lang)
+                row.append(
+                    InlineKeyboardButton(
+                        language_name,
+                        callback_data=f"download_{lang}"
+                    )
+                )
+        keyboard.append(row)
 
-        if language_name.strip():
-            message += f"• {language_name}\n"
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(message)
+    await update.message.reply_text(message, reply_markup=reply_markup)
+
+
+async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    selected_lang = query.data.replace("download_", "")
+    language_name = LANGUAGE_NAMES.get(selected_lang, selected_lang)
+
+    await query.edit_message_text(
+        text=f"✅ You selected: {language_name}\n\n"
+        f"🔗 Downloading subtitles...\n"
+        f"(Subtitle download functionality coming soon!)"
+    )
 
 
 def main():
@@ -126,6 +152,7 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button_callback))
     app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, search)
     )
