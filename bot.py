@@ -43,9 +43,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.strip()
-print("SEARCH FUNCTION STARTED", flush=True)
+    print("SEARCH FUNCTION STARTED", flush=True)
     
-if not query:
+    if not query:
         await update.message.reply_text("Please send a movie or series name.")
         return
 
@@ -63,13 +63,13 @@ if not query:
         return
 
     media_type = movie.get("media_type")
-tmdb_id = movie.get("id")
+    tmdb_id = movie.get("id")
 
-imdb_id = get_imdb_id(media_type, tmdb_id)
+    imdb_id = get_imdb_id(media_type, tmdb_id)
 
-if not imdb_id:
-    await msg.edit_text("❌ IMDb ID not found.")
-    return
+    if not imdb_id:
+        await msg.edit_text("❌ IMDb ID not found.")
+        return
 
     try:
         subtitles = search_subtitles(imdb_id)
@@ -118,6 +118,7 @@ if not imdb_id:
         f"🎬 {movie.get('title')}\n\nChoose a subtitle:",
         reply_markup=reply_markup,
     )
+
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -186,6 +187,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("✅ Subtitle sent.")
     except Exception:
         pass
+
 
 def main():
     application = (
