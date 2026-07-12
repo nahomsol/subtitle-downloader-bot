@@ -16,7 +16,7 @@ from telegram.ext import (
     filters,
 )
 
-from subtitles import search_movie
+from subtitles import search_movie, get_imdb_id
 from opensubtitles import search_subtitles, download_subtitle
 
 
@@ -60,11 +60,14 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text("❌ No movie found.")
         return
 
-    imdb_id = movie.get("imdb_id")
+    media_type = movie.get("media_type")
+tmdb_id = movie.get("id")
 
-    if not imdb_id:
-        await msg.edit_text("❌ IMDb ID not found.")
-        return
+imdb_id = get_imdb_id(media_type, tmdb_id)
+
+if not imdb_id:
+    await msg.edit_text("❌ IMDb ID not found.")
+    return
 
     try:
         subtitles = search_subtitles(imdb_id)
