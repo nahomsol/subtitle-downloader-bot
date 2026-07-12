@@ -71,17 +71,21 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text("❌ IMDb ID not found.")
         return
 
-    try:
-      print("IMDB ID:", imdb_id, flush=True)
+        try:
+        print("IMDB ID:", imdb_id, flush=True)
 
-      subtitles = search_subtitles(imdb_id)
+        subtitles = search_subtitles(imdb_id)
 
     except Exception as e:
-      logger.exception(e)
-      await msg.edit_text("❌ Failed to search subtitles.")
-      return
+        logger.exception(e)
+        await msg.edit_text("❌ Failed to search subtitles.")
+        return
 
-        keyboard = []
+    if not subtitles:
+        await msg.edit_text("❌ No subtitles found.")
+        return
+
+    keyboard = []
 
     for subtitle in subtitles[:20]:
         file_id = subtitle.get("file_id")
