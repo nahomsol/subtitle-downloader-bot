@@ -88,7 +88,10 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
 
     for subtitle in subtitles[:20]:
-        file_id = subtitle.get("file_id")
+
+      print("BUTTON DATA:", subtitle, flush=True)
+
+      file_id = subtitle.get("file_id")
 
         language = (
             subtitle.get("language")
