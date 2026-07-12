@@ -84,7 +84,6 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not subtitles:
        await msg.edit_text("❌ No subtitles found.")
        return
-
 keyboard = []
 
 for subtitle in subtitles[:20]:
