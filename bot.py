@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import tempfile
 
@@ -42,8 +43,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.strip()
-
-    if not query:
+print("SEARCH FUNCTION STARTED", flush=True)
+    
+if not query:
         await update.message.reply_text("Please send a movie or series name.")
         return
 
