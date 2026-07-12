@@ -11,6 +11,41 @@ from config import BOT_TOKEN, check_config
 from subtitles import search_movie, get_imdb_id
 from opensubtitles import search_subtitles
 
+LANGUAGE_NAMES = {
+    "en": "English",
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "pt-PT": "Portuguese (Portugal)",
+    "pt-BR": "Portuguese (Brazil)",
+    "ar": "Arabic",
+    "tr": "Turkish",
+    "ko": "Korean",
+    "ja": "Japanese",
+    "zh-CN": "Chinese (Simplified)",
+    "zh-TW": "Chinese (Traditional)",
+    "zh-CA": "Chinese (Cantonese)",
+    "ru": "Russian",
+    "pl": "Polish",
+    "nl": "Dutch",
+    "ro": "Romanian",
+    "vi": "Vietnamese",
+    "bn": "Bengali",
+    "el": "Greek",
+    "sr": "Serbian",
+    "sk": "Slovak",
+    "fa": "Persian",
+    "hi": "Hindi",
+    "sv": "Swedish",
+    "da": "Danish",
+    "fi": "Finnish",
+    "no": "Norwegian",
+    "cs": "Czech",
+    "hu": "Hungarian",
+}
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -76,7 +111,10 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     for lang in languages[:20]:
-        message += f"• {lang}\n"
+        language_name = LANGUAGE_NAMES.get(lang, lang)
+
+        if language_name.strip():
+            message += f"• {language_name}\n"
 
     await update.message.reply_text(message)
 
