@@ -5,6 +5,7 @@ API_KEY = os.getenv("OPENSUBTITLES_API_KEY")
 
 HEADERS = {
     "Api-Key": API_KEY,
+    "User-Agent": "SubtitleDownloader v1",
     "Content-Type": "application/json"
 }
 
@@ -13,7 +14,7 @@ def search_subtitles(imdb_id):
     url = "https://api.opensubtitles.com/api/v1/subtitles"
 
     params = {
-        "parent_imdb_id": imdb_id,
+        "imdb_id": imdb_id,
         "languages": "en"
     }
 
@@ -22,6 +23,12 @@ def search_subtitles(imdb_id):
         headers=HEADERS,
         params=params
     )
+
+    print("OpenSubtitles status:", response.status_code, flush=True)
+    print(response.text[:500], flush=True)
+
+    if response.status_code != 200:
+        return []
 
     data = response.json()
 
@@ -37,7 +44,6 @@ def search_subtitles(imdb_id):
         })
 
     return results
-
 
 def download_subtitle(file_id):
     url = "https://api.opensubtitles.com/api/v1/download"
