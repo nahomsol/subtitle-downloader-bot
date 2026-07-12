@@ -82,13 +82,13 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
       return
 
     if not subtitles:
-        await msg.edit_text("❌ No subtitles found.")
-        return
+    await msg.edit_text("❌ No subtitles found.")
+    return
 
-    keyboard = []
+keyboard = []
 
-    for subtitle in subtitles[:20]:
-      file_id = subtitle.get("file_id")
+for subtitle in subtitles[:20]:
+    file_id = subtitle.get("file_id")
 
     language = (
         subtitle.get("language")
@@ -102,9 +102,9 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         or ""
     )
 
-        text = language
-        if release:
-            text += f" • {release[:40]}"
+    text = language
+    if release:
+        text += f" • {release[:40]}"
 
         keyboard.append(
             [
