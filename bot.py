@@ -109,7 +109,7 @@ for subtitle in subtitles[:20]:
     keyboard.append([
         InlineKeyboardButton(
             text,
-            callback_data=f"sub_{file_id}"
+            callback_data=f"sub|{file_id}"
         )
     ])
 
