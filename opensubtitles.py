@@ -49,9 +49,11 @@ def search_subtitles(imdb_id):
         subtitles = []
 
         for item in data.get("data", []):
-            attributes = item.get("attributes", {})
-            
-            # Get file_id from files array
+    print(json.dumps(item, indent=2), flush=True)
+
+    attributes = item.get("attributes", {})
+           
+    # Get file_id from files array
             files = attributes.get("files", [])
             if not files:
                 continue
