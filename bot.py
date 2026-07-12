@@ -71,7 +71,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text("❌ IMDb ID not found.")
         return
 
-        try:
+    try:
         print("IMDB ID:", imdb_id, flush=True)
 
         subtitles = search_subtitles(imdb_id)
