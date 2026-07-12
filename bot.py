@@ -1,173 +1,209 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+import os
+import logging
+import tempfile
+
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 from telegram.ext import (
     Application,
     CommandHandler,
-    CallbackQueryHandler,
     MessageHandler,
+    CallbackQueryHandler,
     ContextTypes,
     filters,
 )
 
-from config import BOT_TOKEN, check_config
-from subtitles import search_movie, get_imdb_id
+from subtitles import search_movie
 from opensubtitles import search_subtitles, download_subtitle
-LANGUAGE_NAMES = {
-    "en": "🇬🇧 English",
-    "fr": "🇫🇷 French",
-    "de": "🇩🇪 German",
-    "es": "🇪🇸 Spanish",
-    "it": "🇮🇹 Italian",
-    "pt": "🇵🇹 Portuguese",
-    "pt-PT": "🇵🇹 Portuguese (Portugal)",
-    "pt-BR": "🇧🇷 Portuguese (Brazil)",
-    "ar": "🇸🇦 Arabic",
-    "tr": "🇹🇷 Turkish",
-    "ko": "🇰🇷 Korean",
-    "ja": "🇯🇵 Japanese",
-    "zh-CN": "🇨🇳 Chinese (Simplified)",
-    "zh-TW": "🇹🇼 Chinese (Traditional)",
-    "zh-CA": "🇭🇰 Chinese (Cantonese)",
-    "ru": "🇷🇺 Russian",
-    "pl": "🇵🇱 Polish",
-    "nl": "🇳🇱 Dutch",
-    "ro": "🇷🇴 Romanian",
-    "vi": "🇻🇳 Vietnamese",
-    "bn": "🇧🇩 Bengali",
-    "el": "🇬🇷 Greek",
-    "sr": "🇷🇸 Serbian",
-    "sk": "🇸🇰 Slovak",
-    "fa": "🇮🇷 Persian",
-    "hi": "🇮🇳 Hindi",
-    "sv": "🇸🇪 Swedish",
-    "da": "🇩🇰 Danish",
-    "fi": "🇫🇮 Finnish",
-    "no": "🇳🇴 Norwegian",
-    "cs": "🇨🇿 Czech",
-    "hu": "🇭🇺 Hungarian",
-}
+
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logger = logging.getLogger(__name__)
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN environment variable is missing!")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🎬 Welcome!\n\n"
-        "Send me a movie or TV show name.\n"
-        "I'll search for available subtitles."
+        "🎬 Send me a movie or TV series name.\n\n"
+        "I'll search and let you download subtitles."
     )
 
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    movie_name = update.message.text.strip()
+    query = update.message.text.strip()
 
-    if not movie_name:
-        await update.message.reply_text("Please send a movie name.")
+    if not query:
+        await update.message.reply_text("Please send a movie or series name.")
         return
 
-    await update.message.reply_text("🔎 Searching...")
+    msg = await update.message.reply_text("🔎 Searching...")
 
-    result = search_movie(movie_name)
-
-    if not result:
-        await update.message.reply_text("❌ Movie not found.")
+    try:
+        movie = search_movie(query)
+    except Exception as e:
+        logger.exception(e)
+        await msg.edit_text("❌ Failed to search movie.")
         return
 
-    media_type = result.get("media_type")
-    tmdb_id = result.get("id")
+    if not movie:
+        await msg.edit_text("❌ No movie found.")
+        return
 
-    imdb_id = get_imdb_id(media_type, tmdb_id)
+    imdb_id = movie.get("imdb_id")
 
-    title = result.get("title") or result.get("name")
-    year = ""
+    if not imdb_id:
+        await msg.edit_text("❌ IMDb ID not found.")
+        return
 
-    if result.get("release_date"):
-        year = result["release_date"][:4]
-
-    elif result.get("first_air_date"):
-        year = result["first_air_date"][:4]
-
-    subtitles = search_subtitles(imdb_id)
+    try:
+        subtitles = search_subtitles(imdb_id)
+    except Exception as e:
+        logger.exception(e)
+        await msg.edit_text("❌ Failed to search subtitles.")
+        return
 
     if not subtitles:
-        await update.message.reply_text(
-            f"✅ Found\n\n"
-            f"Title: {title}\n"
-            f"Year: {year}\n\n"
-            "❌ No subtitles found."
-        )
+        await msg.edit_text("❌ No subtitles found.")
         return
 
-    languages = []
-
-    for sub in subtitles:
-        lang = sub.get("language")
-
-        if lang and lang not in languages:
-            languages.append(lang)
-
-    message = (
-        f"✅ Found\n\n"
-        f"Title: {title}\n"
-        f"Year: {year}\n\n"
-        "🌍 Available subtitle languages:\n\n"
-    )
-
-    # Create inline buttons for languages (2 per row)
     keyboard = []
 
-for i in range(0, len(subtitles[:20]), 2):
-    row = []
+    for subtitle in subtitles[:20]:
+        file_id = subtitle.get("file_id")
 
-    for j in range(2):
-        if i + j < len(subtitles[:20]):
+        language = (
+            subtitle.get("language")
+            or subtitle.get("lang")
+            or "Unknown"
+        )
 
-            sub = subtitles[i + j]
+        release = (
+            subtitle.get("release")
+            or subtitle.get("release_name")
+            or ""
+        )
 
-            language_name = LANGUAGE_NAMES.get(
-                sub["language"],
-                sub["language"]
-            )
+        text = language
+        if release:
+            text += f" • {release[:40]}"
 
-            row.append(
+        keyboard.append(
+            [
                 InlineKeyboardButton(
-                    language_name,
-                    callback_data=f'download_{sub["file_id"]}'
+                    text=text,
+                    callback_data=f"sub|{file_id}",
                 )
-            )
-
-    keyboard.append(row)
+            ]
+        )
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(message, reply_markup=reply_markup)
-
+    await msg.edit_text(
+        f"🎬 {movie.get('title')}\n\nChoose a subtitle:",
+        reply_markup=reply_markup,
+    )
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    selected_lang = query.data.replace("download_", "")
-    language_name = LANGUAGE_NAMES.get(selected_lang, selected_lang)
+    data = query.data or ""
 
-    await query.edit_message_text(
-        text=f"✅ You selected: {language_name}\n\n"
-        f"🔗 Downloading subtitles...\n"
-        f"(Subtitle download functionality coming soon!)"
+    if not data.startswith("sub|"):
+        await query.edit_message_text("❌ Invalid request.")
+        return
+
+    file_id = data.split("|", 1)[1]
+
+    try:
+        await query.edit_message_text("⬇️ Downloading subtitle...")
+    except Exception:
+        pass
+
+    try:
+        subtitle = download_subtitle(file_id)
+    except Exception as e:
+        logger.exception(e)
+        await query.edit_message_text("❌ Failed to download subtitle.")
+        return
+
+    if not subtitle:
+        await query.edit_message_text("❌ Subtitle download failed.")
+        return
+
+    filename = (
+        subtitle.get("filename")
+        or subtitle.get("file_name")
+        or f"{file_id}.srt"
     )
 
+    content = (
+        subtitle.get("content")
+        or subtitle.get("data")
+        or subtitle.get("bytes")
+    )
+
+    if content is None:
+        await query.edit_message_text("❌ Invalid subtitle data.")
+        return
+
+    if isinstance(content, str):
+        content = content.encode("utf-8")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".srt") as tmp:
+        tmp.write(content)
+        temp_path = tmp.name
+
+    try:
+        with open(temp_path, "rb") as f:
+            await context.bot.send_document(
+                chat_id=query.message.chat_id,
+                document=f,
+                filename=filename,
+                reply_to_message_id=query.message.message_id,
+            )
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    try:
+        await query.edit_message_text("✅ Subtitle sent.")
+    except Exception:
+        pass
 
 def main():
-    check_config()
-
-    app = Application.builder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_callback))
-    app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, search)
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .build()
     )
 
-    print("Bot started...")
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            search,
+        )
+    )
+    application.add_handler(
+        CallbackQueryHandler(button_callback)
+    )
 
-    app.run_polling(drop_pending_updates=True)
+    logger.info("Bot started...")
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES
+    )
 
 
 if __name__ == "__main__":
