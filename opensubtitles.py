@@ -38,10 +38,10 @@ def search_subtitles(imdb_id):
     attr = item.get("attributes", {})
 
     results.append({
-        "file_id": item.get("id"),
-        "language": attr.get("language"),
-        "release": attr.get("release")
-    })
+    "file_id": attr.get("subtitle_id"),
+    "language": attr.get("language"),
+    "release": attr.get("release")
+})
 
     return results
 
