@@ -10,7 +10,7 @@ from telegram.ext import (
 
 from config import BOT_TOKEN, check_config
 from subtitles import search_movie, get_imdb_id
-from opensubtitles import search_subtitles, download_subtitle
+from opensubtitles import search_subtitles
 
 LANGUAGE_NAMES = {
     "en": "🇬🇧 English",
@@ -97,17 +97,12 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     languages = []
-    subtitle_map = {}
 
     for sub in subtitles:
         lang = sub.get("language")
 
         if lang and lang not in languages:
             languages.append(lang)
-            subtitle_map[lang] = sub.get("file_id")
-
-    # Store subtitle data in context for later use
-    context.user_data["subtitle_map"] = subtitle_map
 
     message = (
         f"✅ Found\n\n"
@@ -144,42 +139,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = query.data.replace("download_", "")
     language_name = LANGUAGE_NAMES.get(selected_lang, selected_lang)
 
-    # Get file_id from stored data
-    subtitle_map = context.user_data.get("subtitle_map", {})
-    file_id = subtitle_map.get(selected_lang)
-
-    if not file_id:
-        await query.edit_message_text(
-            text=f"❌ Error: Could not find subtitle file for {language_name}"
-        )
-        return
-
     await query.edit_message_text(
         text=f"✅ You selected: {language_name}\n\n"
-        f"🔗 Downloading subtitles..."
-    )
-
-    # Download subtitle file
-    subtitle_file = download_subtitle(file_id)
-
-    if not subtitle_file:
-        await query.edit_message_text(
-            text=f"❌ Error downloading subtitles for {language_name}\n"
-            f"Please try again later."
-        )
-        return
-
-    # Send subtitle file to user
-    subtitle_file.seek(0)
-    await query.message.reply_document(
-        document=subtitle_file,
-        filename=f"subtitle_{selected_lang}.srt",
-        caption=f"✅ Here's your {language_name} subtitle!"
-    )
-
-    await query.edit_message_text(
-        text=f"✅ Successfully downloaded: {language_name}\n\n"
-        f"📥 Check your downloads!"
+        f"🔗 Downloading subtitles...\n"
+        f"(Subtitle download functionality coming soon!)"
     )
 
 
