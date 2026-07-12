@@ -9,6 +9,7 @@ from telegram.ext import (
 
 from config import BOT_TOKEN, check_config
 from subtitles import search_movie, get_imdb_id
+from opensubtitles import search_subtitles
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -48,12 +49,36 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif result.get("first_air_date"):
         year = result["first_air_date"][:4]
 
-    await update.message.reply_text(
+    subtitles = search_subtitles(imdb_id)
+
+    if not subtitles:
+        await update.message.reply_text(
+            f"✅ Found\n\n"
+            f"Title: {title}\n"
+            f"Year: {year}\n\n"
+            "❌ No subtitles found."
+        )
+        return
+
+    languages = []
+
+    for sub in subtitles:
+        lang = sub.get("language")
+
+        if lang and lang not in languages:
+            languages.append(lang)
+
+    message = (
         f"✅ Found\n\n"
         f"Title: {title}\n"
-        f"Year: {year}\n"
-        f"IMDb: {imdb_id}"
+        f"Year: {year}\n\n"
+        "🌍 Available subtitle languages:\n\n"
     )
+
+    for lang in languages[:20]:
+        message += f"• {lang}\n"
+
+    await update.message.reply_text(message)
 
 
 def main():
