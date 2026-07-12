@@ -82,8 +82,8 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
       return
 
     if not subtitles:
-    await msg.edit_text("❌ No subtitles found.")
-    return
+       await msg.edit_text("❌ No subtitles found.")
+       return
 
 keyboard = []
 
@@ -106,14 +106,12 @@ for subtitle in subtitles[:20]:
     if release:
         text += f" • {release[:40]}"
 
-        keyboard.append(
-            [
-                InlineKeyboardButton(
-                    text=text,
-                    callback_data=f"sub|{file_id}",
-                )
-            ]
+    keyboard.append([
+        InlineKeyboardButton(
+            text,
+            callback_data=f"sub_{file_id}"
         )
+    ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
