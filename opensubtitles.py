@@ -11,74 +11,65 @@ from config import (
 BASE_URL = "https://api.opensubtitles.com/api/v1"
 
 
-def search_subtitles(imdb_id):
-    """Search for subtitles by IMDb ID"""
+ def search_subtitles(imdb_id):
     headers = {
         "Api-Key": OPENSUBTITLES_API_KEY,
         "User-Agent": "SubtitleDownloaderBot v1.0",
     }
 
-    # Remove "tt" prefix if present, keep only numbers
-    imdb_id_clean = imdb_id.replace("tt", "") if imdb_id.startswith("tt") else imdb_id
-
-    params = {
-        "imdb_id": imdb_id_clean,
-    }
+    imdb_id_clean = imdb_id.replace("tt", "")
 
     try:
-        print(f"Searching subtitles for IMDb ID: {imdb_id_clean}", flush=True)
-        
-        # Use GET to /search endpoint (not POST to /download)
+        print("🔎 Searching IMDb:", imdb_id_clean, flush=True)
+
         response = requests.get(
             f"{BASE_URL}/search",
             headers=headers,
-            params=params,
+            params={
+                "imdb_id": imdb_id_clean
+            },
             timeout=30,
         )
 
-        print(f"Search response status: {response.status_code}", flush=True)
+        print("Status:", response.status_code, flush=True)
 
         if response.status_code != 200:
-            print(f"Error: Status code {response.status_code}", flush=True)
-            print(f"Response: {response.text[:500]}", flush=True)
+            print(response.text, flush=True)
             return []
 
         data = response.json()
-        print(f"Found response data with {len(data.get('data', []))} items", flush=True)
+
+        print("Total results:", len(data.get("data", [])), flush=True)
 
         subtitles = []
-for item in data.get("data", []):
-    print(json.dumps(item, indent=2), flush=True)    attributes = item.get("attributes", {})
-           
-    # Get file_id from files array
+
+        for item in data.get("data", []):
+            attributes = item.get("attributes", {})
+
             files = attributes.get("files", [])
+
             if not files:
                 continue
-                
+
             file_id = files[0].get("file_id")
+
             if not file_id:
                 continue
 
-            subtitle_entry = {
-                "language": attributes.get("language"),
-                "file_id": file_id,
-            }
-            
-            # Add optional fields if available (for display in keyboard)
-            if attributes.get("release"):
-                subtitle_entry["release"] = attributes.get("release")
-            if attributes.get("release_name"):
-                subtitle_entry["release_name"] = attributes.get("release_name")
+            subtitles.append(
+                {
+                    "language": attributes.get("language", "Unknown"),
+                    "release": attributes.get("release", ""),
+                    "file_id": file_id,
+                }
+            )
 
-            subtitles.append(subtitle_entry)
+        print("Subtitles found:", len(subtitles), flush=True)
 
-        print(f"Returning {len(subtitles)} subtitles", flush=True)
         return subtitles
 
     except Exception as e:
-        print(f"Error searching subtitles: {e}", flush=True)
-        import traceback
-        traceback.print_exc()
+        print("SEARCH ERROR:", e, flush=True)
         return []
 
 
