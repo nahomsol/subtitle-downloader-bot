@@ -81,36 +81,34 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
       await msg.edit_text("❌ Failed to search subtitles.")
       return
 
-    if not subtitles:
-       await msg.edit_text("❌ No subtitles found.")
-       return
-keyboard = []
+        keyboard = []
 
-for subtitle in subtitles[:20]:
-    file_id = subtitle.get("file_id")
+    for subtitle in subtitles[:20]:
+        file_id = subtitle.get("file_id")
 
-    language = (
-        subtitle.get("language")
-        or subtitle.get("lang")
-        or "Unknown"
-    )
-
-    release = (
-        subtitle.get("release")
-        or subtitle.get("release_name")
-        or ""
-    )
-
-    text = language
-    if release:
-        text += f" • {release[:40]}"
-
-    keyboard.append([
-        InlineKeyboardButton(
-            text,
-            callback_data=f"sub|{file_id}"
+        language = (
+            subtitle.get("language")
+            or subtitle.get("lang")
+            or "Unknown"
         )
-    ])
+
+        release = (
+            subtitle.get("release")
+            or subtitle.get("release_name")
+            or ""
+        )
+
+        text = language
+
+        if release:
+            text += f" • {release[:40]}"
+
+        keyboard.append([
+            InlineKeyboardButton(
+                text,
+                callback_data=f"sub|{file_id}"
+            )
+        ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
