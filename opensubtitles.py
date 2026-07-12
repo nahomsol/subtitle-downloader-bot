@@ -2,7 +2,11 @@ import requests
 import io
 import gzip
 
-from config import OPENSUBTITLES_API_KEY
+from config import (
+    OPENSUBTITLES_API_KEY,
+    OPENSUBTITLES_USERNAME,
+    OPENSUBTITLES_PASSWORD,
+)
 
 BASE_URL = "https://api.opensubtitles.com/api/v1"
 
@@ -17,12 +21,14 @@ def search_subtitles(imdb_id):
         "imdb_id": imdb_id.replace("tt", ""),
     }
 
-    response = requests.get(
-        f"{BASE_URL}/subtitles",
-        headers=headers,
-        params=params,
-        timeout=20,
-    )
+    response = requests.post(
+    f"{BASE_URL}/download",
+    headers=headers,
+    json={
+        "file_id": file_id
+    },
+    timeout=30,
+)
 
     if response.status_code != 200:
         return []
